@@ -62,6 +62,7 @@ declare global {
       trackShipment: (trackingNumber: string, forceRefresh?: boolean) => Promise<TrackingResult>;
       onTrackingStatus: (callback: (data: TrackingStatusEvent) => void) => () => void;
       getCarriers: () => Promise<Array<{ id: string; displayName: string }>>;
+      onCaptchaOverlay: (callback: (show: boolean) => void) => () => void;
     };
   }
 }
@@ -650,7 +651,6 @@ function renderShipmentRow(s: TrackedShipment): string {
   html += `<div class="col-freshness"><span class="freshness-text">${timeAgo(s.fetchedAt)}</span></div>`;
   html += `<div class="col-actions">`;
   html += `<button class="icon-btn refresh-btn" data-refresh="${safeId}" title="Refresh">\u21BB</button>`;
-  html += `<button class="icon-btn expand-btn" data-expand="${safeId}" title="${isExpanded ? 'Collapse' : 'Expand'}">${isExpanded ? '\u25B2' : '\u25BC'}</button>`;
   html += `<button class="icon-btn remove-btn" data-remove="${safeId}" title="Remove">\u2715</button>`;
   html += `</div>`;
   html += `</div>`; // .shipment-row-main
@@ -779,5 +779,12 @@ function renderDetailSection(r: TrackingResult): string {
 // --- Event Listeners ---
 
 searchBtn.addEventListener('click', doSearch);
+
+// --- CAPTCHA Overlay ---
+
+const captchaOverlay = document.getElementById('captchaOverlay')!;
+window.electronAPI.onCaptchaOverlay((show) => {
+  captchaOverlay.classList.toggle('hidden', !show);
+});
 
 trackingInput.focus();

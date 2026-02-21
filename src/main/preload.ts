@@ -10,4 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   getCarriers: () =>
     ipcRenderer.invoke('get-carriers') as Promise<Array<{ id: string; displayName: string }>>,
+  onCaptchaOverlay: (callback: (show: boolean) => void) => {
+    const listener = (_event: any, show: boolean) => callback(show);
+    ipcRenderer.on('captcha-overlay', listener);
+    return () => ipcRenderer.removeListener('captcha-overlay', listener);
+  },
 });

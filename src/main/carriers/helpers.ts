@@ -1,6 +1,23 @@
-import { BrowserWindow } from 'electron';
+import { BrowserWindow, app } from 'electron';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/** Dump debug data (HTML or JSON) to the app's debug directory. */
+export function dumpDebug(carrierId: string, label: string, data: string): void {
+  try {
+    const debugDir = path.join(app.getPath('userData'), 'debug');
+    fs.mkdirSync(debugDir, { recursive: true });
+    const filePath = path.join(debugDir, `${carrierId}-${label}-${Date.now()}.json`);
+    fs.writeFileSync(filePath, data);
+    console.log(`[${carrierId}] Debug saved to: ${filePath}`);
+  } catch {
+    // ignore
+  }
+}
 
 export interface CDPTrackOptions {
+  /** Carrier identifier for debug logging (e.g. 'msc', 'one') */
+  carrierId: string;
   url: string;
   responseUrlMatch: string;
   timeout?: number;
@@ -24,6 +41,7 @@ export function cleanText(text: string): string {
 
 export async function cdpTrack(options: CDPTrackOptions, value: string, signal?: AbortSignal): Promise<any> {
   const {
+    carrierId,
     url,
     responseUrlMatch,
     timeout = 45000,
@@ -94,6 +112,7 @@ export async function cdpTrack(options: CDPTrackOptions, value: string, signal?:
         );
         const json = JSON.parse(body);
         if (responseValidator && !responseValidator(json)) return;
+        dumpDebug(carrierId, 'response', JSON.stringify(json, null, 2));
         finish(json);
       } catch {
         // Window destroyed or body not ready — ignore

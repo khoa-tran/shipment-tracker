@@ -33,6 +33,7 @@ async function trackCOSCO(searchValue: string, signal?: AbortSignal): Promise<Tr
   const val = searchValue.trim().toUpperCase();
 
   const json = await cdpTrack({
+    carrierId: 'cosco',
     url: 'https://elines.coscoshipping.com/ebusiness/cargoTracking',
     responseUrlMatch: 'cargoTracking',
     timeout: 45000,

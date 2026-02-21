@@ -59,6 +59,7 @@ async function trackMaersk(searchValue: string, signal?: AbortSignal): Promise<T
   const val = searchValue.trim().toUpperCase();
 
   const json = await cdpTrack({
+    carrierId: 'maersk',
     url: 'https://www.maersk.com/tracking/',
     responseUrlMatch: '',
     timeout: 45000,

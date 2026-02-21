@@ -31,6 +31,7 @@ async function trackZIM(searchValue: string, signal?: AbortSignal): Promise<Trac
   const val = searchValue.trim().toUpperCase();
 
   const json = await cdpTrack({
+    carrierId: 'zim',
     url: 'https://www.zim.com/tools/track-a-shipment',
     responseUrlMatch: 'track',
     timeout: 45000,

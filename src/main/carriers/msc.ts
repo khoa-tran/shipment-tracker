@@ -39,6 +39,7 @@ export async function trackMSC(searchValue: string, signal?: AbortSignal): Promi
   const val = searchValue.trim().toUpperCase();
 
   const json = await cdpTrack({
+    carrierId: 'msc',
     url: 'https://www.msc.com/en/track-a-shipment',
     responseUrlMatch: 'TrackingInfo',
     timeout: 45000,

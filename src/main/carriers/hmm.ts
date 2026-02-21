@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { TrackingResult, ContainerInfo, TrackingEvent } from './types';
 import { registry } from './registry';
+import { dumpDebug } from './helpers';
 
 const HMM_PAGE_URL = 'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do';
 const HMM_API_URL = 'https://www.hmm21.com/e-service/general/trackNTrace/selectTrackNTrace.do';
@@ -94,6 +95,7 @@ async function trackHMM(searchValue: string, signal?: AbortSignal): Promise<Trac
   });
 
   const html = await response.text();
+  dumpDebug('hmm', 'response', html);
   const $ = cheerio.load(html);
 
   // Check for error / denied page

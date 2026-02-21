@@ -2,10 +2,7 @@ import { session, WebContentsView } from 'electron';
 import * as cheerio from 'cheerio';
 import { TrackingResult, ContainerInfo, TrackingEvent } from './types';
 import { registry } from './registry';
-import { cleanText, delay } from './helpers';
-import * as fs from 'fs';
-import * as path from 'path';
-import { app } from 'electron';
+import { cleanText, delay, dumpDebug } from './helpers';
 import { getMainWindow } from '../main';
 
 const TIMEOUT = 60000;
@@ -68,18 +65,6 @@ async function waitForContent(view: WebContentsView, deadline: number): Promise<
     await delay(POLL_INTERVAL);
   }
   return false;
-}
-
-function dumpDebugHtml(html: string, label: string) {
-  try {
-    const debugDir = path.join(app.getPath('userData'), 'debug');
-    fs.mkdirSync(debugDir, { recursive: true });
-    const filePath = path.join(debugDir, `oocl-${label}-${Date.now()}.html`);
-    fs.writeFileSync(filePath, html);
-    console.log(`[OOCL] Debug HTML saved to: ${filePath}`);
-  } catch {
-    // ignore
-  }
 }
 
 /** Normalize container number: "OOCU904051-4" → "OOCU9040514" */
@@ -440,7 +425,7 @@ async function trackOOCL(searchValue: string, signal?: AbortSignal): Promise<Tra
         }
 
         // Dump HTML for debugging
-        dumpDebugHtml(html, 'results');
+        dumpDebug('oocl', 'results', html);
 
         const result = parseResults(html, val);
         console.log(`[OOCL] Parse result: ${result ? 'found data' : 'null'} (containers=${result?.containers.length}, events=${result?.events.length})`);

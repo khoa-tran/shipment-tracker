@@ -27,6 +27,7 @@ async function trackHapag(searchValue: string, signal?: AbortSignal): Promise<Tr
   const val = searchValue.trim().toUpperCase();
 
   const json = await cdpTrack({
+    carrierId: 'hapag',
     url: 'https://www.hapag-lloyd.com/en/online-business/track/track-by-container-solution.html',
     responseUrlMatch: 'track',
     timeout: 45000,

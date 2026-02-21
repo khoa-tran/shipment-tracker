@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { TrackingResult, ContainerInfo, PlanMove } from './types';
 import { registry } from './registry';
+import { dumpDebug } from './helpers';
 
 const EVERGREEN_URL = 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do';
 const HEADERS: Record<string, string> = {
@@ -70,6 +71,7 @@ async function trackEvergreen(searchValue: string, signal?: AbortSignal): Promis
   });
 
   const html = await response.text();
+  dumpDebug('evergreen', 'response', html);
 
   if (!html.includes('Vessel Voyage on B/L')) {
     return null;

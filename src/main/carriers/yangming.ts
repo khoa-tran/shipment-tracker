@@ -7,6 +7,7 @@ async function trackYangMing(searchValue: string, signal?: AbortSignal): Promise
 
   // Yang Ming is ASP.NET — use CDP to handle VIEWSTATE complexity
   const json = await cdpTrack({
+    carrierId: 'yangming',
     url: 'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx',
     responseUrlMatch: 'track_trace',
     timeout: 45000,

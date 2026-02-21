@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'">
+  <title>Shipment Tracker</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <div class="search-bar">
+      <div class="search-bar-inner">
+        <h1>Shipment Tracker</h1>
+        <div class="search-row">
+          <textarea
+            id="trackingInput"
+            rows="2"
+            placeholder="Enter B/L or Container # (one per line or comma-separated)"
+            autocomplete="off"
+            spellcheck="false"
+          ></textarea>
+          <button id="searchBtn" type="button">TRACK</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div id="loading" class="loading hidden">
+        <div class="spinner"></div>
+        <span id="loadingText">Tracking...</span>
+        <div id="carrierStatus" class="carrier-status"></div>
+      </div>
+
+      <div id="progress" class="progress hidden">
+        <span id="progressText"></span>
+        <div class="progress-bar-container">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+      </div>
+
+      <div id="error" class="error hidden"></div>
+
+      <div id="results" class="results hidden"></div>
+
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

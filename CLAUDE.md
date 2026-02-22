@@ -35,6 +35,7 @@ Renderer (src/renderer/)          Main (src/main/)
                           ├── carriers/one.ts
                           ├── carriers/yangming.ts
                           ├── carriers/kmtc.ts
+                          ├── carriers/sealead.ts
                           ├── carriers/cmacgm.ts    (disabled)
                           ├── carriers/hapag.ts      (disabled)
                           └── carriers/maersk.ts     (disabled)

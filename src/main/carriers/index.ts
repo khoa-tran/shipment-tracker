@@ -4,6 +4,7 @@ import './msc';
 import './evergreen'; // emc/evergreen
 import './hmm';
 import './zim';
+import './sealead';
 import './oocl'; // Last: may require CAPTCHA
 // import './maersk';
 // import './cmacgm';

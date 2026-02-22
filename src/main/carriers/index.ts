@@ -6,7 +6,7 @@ import './hmm';
 import './zim';
 import './sealead';
 import './oocl'; // Last: may require CAPTCHA
-// import './maersk';
+import './maersk';
 // import './cmacgm';
 // import './hapag';
 import './cosco';

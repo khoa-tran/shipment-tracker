@@ -30,7 +30,14 @@ Renderer (src/renderer/)          Main (src/main/)
                           ├── carriers/msc.ts
                           ├── carriers/hmm.ts
                           ├── carriers/zim.ts
-                          └── carriers/oocl.ts
+                          ├── carriers/oocl.ts
+                          ├── carriers/cosco.ts
+                          ├── carriers/one.ts
+                          ├── carriers/yangming.ts
+                          ├── carriers/kmtc.ts
+                          ├── carriers/cmacgm.ts    (disabled)
+                          ├── carriers/hapag.ts      (disabled)
+                          └── carriers/maersk.ts     (disabled)
 ```
 
 All carriers self-register via `registry.register()` when imported in `carriers/index.ts`. The registry runs all carriers in parallel; first successful result wins.
@@ -40,28 +47,20 @@ All carriers self-register via `registry.register()` when imported in `carriers/
 
 ### Carrier Tracking Strategies
 
-There are four proven integration patterns, chosen based on how each carrier's website serves data and what bot protection it uses:
+There are six proven integration patterns, chosen based on how each carrier's website serves data and what bot protection it uses:
 
 | Pattern | When to use | Example carriers |
 |---------|------------|-----------------|
 | **HTTP + cheerio** | Carrier has a simple form POST returning HTML | Evergreen |
-| **CDP network intercept** (`cdpTrack` helper) | Carrier loads data via XHR/fetch returning JSON | MSC, HMM |
-| **Session cookies + API** | Carrier has a JSON API behind bot protection (Akamai, etc.) | ZIM |
+| **Direct REST API** | Carrier has an open JSON API, no browser needed | ONE, Yang Ming |
+| **CDP network intercept** (`cdpTrack` helper) | Carrier loads data via XHR/fetch returning JSON | MSC, HMM, CMA CGM, Hapag-Lloyd, Maersk |
+| **Session cookies + API** | Carrier has a JSON API behind bot protection (Akamai, etc.) | ZIM, KMTC |
+| **BrowserWindow + DOM scraping** | JS-rendered SPA requiring browser interaction + DOM reads | COSCO |
 | **BrowserWindow + CAPTCHA overlay** | Carrier requires user CAPTCHA solving | OOCL |
 
-**Evergreen** (`evergreen.ts`): HTTP POST to `ct.shipmentlink.com` + cheerio HTML parsing. No browser needed. 30s timeout.
+**Adding a new carrier**: Check the carrier's website — use Network tab to find API endpoints. Prefer direct REST API (simplest, no browser) or HTTP+cheerio. Use CDP intercept for JS-rendered pages with XHR data. If bot protection blocks Electron, try the session-cookie+API pattern (ZIM/KMTC). Use BrowserWindow+DOM scraping for SPAs without interceptable APIs. Use CAPTCHA overlay only as last resort. Read an existing carrier using the same pattern as a reference.
 
-**MSC** (`msc.ts`): Hidden BrowserWindow with CDP. Intercepts JSON from TrackingInfo API. 45s timeout.
-
-**HMM** (`hmm.ts`): Hidden BrowserWindow with CDP via `cdpTrack` helper. Same pattern as MSC. 45s timeout.
-
-**ZIM** (`zim.ts`): Loads ZIM page (without tracking number) in hidden BrowserWindow to obtain Akamai session cookies, then calls `apigw.zim.com` JSON API via `executeJavaScript` fetch. If Akamai challenge triggers, window is shown briefly for auto-resolution. 45s timeout.
-
-**OOCL** (`oocl.ts`): BrowserWindow with `WebContentsView` overlay for CAPTCHA. Embeds CAPTCHA in main app window for user to solve, then scrapes results HTML.
-
-**Adding a new carrier**: Check the carrier's website — use Network tab to find API endpoints. Prefer HTTP+cheerio (simplest) or CDP intercept (for JS-rendered pages). If bot protection blocks Electron, try the session-cookie+API pattern (ZIM). Use CAPTCHA overlay only as last resort.
-
-**Carrier detection** (`detect.ts`): Identifies carrier and search type by prefix patterns (e.g., EISU/EGHU → Evergreen container, MSCU/MEDU → MSC container).
+**Carrier detection**: No prefix-based detection; the registry runs all enabled carriers in parallel and returns the first successful result. OOCL is deferred (runs last) since it may require CAPTCHA.
 
 **Debug logging**: `dumpDebug()` writes response data to `userData/debug/`. Enabled automatically during `npm run dev` or when `SHIPMENT_DEBUG=1` env var is set. Off in production.
 

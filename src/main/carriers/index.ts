@@ -9,7 +9,7 @@ import './oocl'; // Last: may require CAPTCHA
 // import './cmacgm';
 // import './hapag';
 import './cosco';
-// import './one';
+import './one';
 // import './yangming';
 
 export { registry } from './registry';

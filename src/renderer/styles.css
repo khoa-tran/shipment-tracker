@@ -580,10 +580,43 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-size: 12px;
   color: #444;
   transition: background 0.15s;
+}
+
+.container-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.container-info-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.container-no {
+  font-size: 13px;
+  font-weight: 600;
+  color: #16213e;
+}
+
+.container-badge {
+  font-size: 10px;
+  color: #666;
+  background: #f0f2f5;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.container-info-status {
+  font-size: 11px;
+  color: #777;
 }
 
 .container-header[data-container] {
@@ -615,15 +648,6 @@ body {
 
 .container-events .data-table {
   font-size: 11px;
-}
-
-.container-detail {
-  color: #888;
-  font-size: 11px;
-}
-
-.container-status {
-  font-weight: 500;
 }
 
 /* ---- Responsive ---- */

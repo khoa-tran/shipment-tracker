@@ -140,6 +140,49 @@ function formatDate(raw: string | undefined): string {
 
 // --- Helpers ---
 
+// ISO 6346 size/type decoding — only for 4-char codes like "22G1"
+const ISO_SIZES: Record<string, string> = {
+  '2': "20'", '4': "40'", '9': "20'", 'L': "45'", 'M': "48'",
+};
+const ISO_HEIGHTS: Record<string, string> = {
+  '0': "8'", '2': "8'6\"", '5': "9'6\"",
+};
+const ISO_TYPES: Record<string, string> = {
+  'G': 'Dry', 'R': 'Reefer', 'U': 'Open Top', 'T': 'Tank',
+  'P': 'Flat Rack', 'B': 'Bulk', 'V': 'Ventilated',
+};
+// Common shorthand codes used by some carriers (e.g. "40HC", "20GP")
+const SHORTHAND: Record<string, string> = {
+  'HC': "High Cube", 'GP': "Dry", 'DV': "Dry", 'RF': "Reefer",
+  'OT': "Open Top", 'FR': "Flat Rack", 'TK': "Tank",
+};
+
+function formatSizeType(code: string): string {
+  if (!code) return '';
+  const c = code.trim();
+
+  // ISO 6346 4-char: e.g. "22G1", "45R1"
+  if (/^\d[0-9A-Z][A-Z]\d$/.test(c)) {
+    const size = ISO_SIZES[c[0]] || '';
+    const height = ISO_HEIGHTS[c[1]] || '';
+    const type = ISO_TYPES[c[2]] || '';
+    const hc = c[1] === '5' ? 'High Cube' : '';
+    const parts = [size, hc || type].filter(Boolean);
+    if (parts.length > 0) return `${parts.join(' ')} (${c})`;
+  }
+
+  // Shorthand: e.g. "40HC", "20GP", "40RF"
+  const shMatch = c.match(/^(\d{2})\s*([A-Z]{2})$/);
+  if (shMatch) {
+    const size = shMatch[1] === '20' ? "20'" : shMatch[1] === '40' ? "40'" : shMatch[1] === '45' ? "45'" : `${shMatch[1]}'`;
+    const type = SHORTHAND[shMatch[2]] || shMatch[2];
+    return `${size} ${type} (${c})`;
+  }
+
+  // Not a recognized format — return as-is
+  return c;
+}
+
 function escapeHtml(text: string): string {
   const div = document.createElement('div');
   div.textContent = text;
@@ -749,12 +792,20 @@ function renderDetailSection(r: TrackingResult): string {
         html += `<span class="container-toggle">\u25B6</span>`;
       }
 
-      html += `<span class="mono">${escapeHtml(c.containerNo)}</span>`;
-      if (c.sizeType) html += `<span class="container-detail">${escapeHtml(c.sizeType)}</span>`;
-      if (c.sealNo) html += `<span class="container-detail seal-cell">${escapeHtml(c.sealNo)}</span>`;
-      if (c.currentStatus) html += `<span class="container-status">${escapeHtml(c.currentStatus)}</span>`;
-      if (c.date) html += `<span class="container-detail">${escapeHtml(formatDate(c.date) || c.date)}</span>`;
-      if (c.location) html += `<span class="container-detail">${escapeHtml(c.location)}</span>`;
+      html += `<div class="container-info">`;
+      html += `<div class="container-info-main">`;
+      html += `<span class="mono container-no">${escapeHtml(c.containerNo)}</span>`;
+      if (c.sizeType) html += `<span class="container-badge">${escapeHtml(formatSizeType(c.sizeType))}</span>`;
+      if (c.sealNo) html += `<span class="container-badge seal-cell">${escapeHtml(c.sealNo)}</span>`;
+      html += `</div>`;
+      const statusParts: string[] = [];
+      if (c.currentStatus) statusParts.push(`<strong>${escapeHtml(c.currentStatus)}</strong>`);
+      if (c.date) statusParts.push(escapeHtml(formatDate(c.date) || c.date));
+      if (c.location) statusParts.push(escapeHtml(c.location));
+      if (statusParts.length > 0) {
+        html += `<div class="container-info-status">${statusParts.join(' &mdash; ')}</div>`;
+      }
+      html += `</div>`;
 
       html += '</div>'; // .container-header
 

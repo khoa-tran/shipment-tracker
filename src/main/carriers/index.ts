@@ -8,7 +8,7 @@ import './oocl'; // Last: may require CAPTCHA
 // import './maersk';
 // import './cmacgm';
 // import './hapag';
-// import './cosco';
+import './cosco';
 // import './one';
 // import './yangming';
 

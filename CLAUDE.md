@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Shipment Tracker is a cross-platform Electron desktop app for tracking shipments from Evergreen and MSC shipping carriers. Built with TypeScript, esbuild, and cheerio for HTML parsing.
+Shipment Tracker is a cross-platform Electron desktop app for tracking shipments across multiple shipping carriers. Built with TypeScript, esbuild, and cheerio for HTML parsing.
 
 ## Commands
 
@@ -24,21 +24,46 @@ No test framework or linter is configured.
 ```
 Renderer (src/renderer/)          Main (src/main/)
   renderer.ts  ──IPC──►  ipc-handlers.ts
-  index.html              ├── carriers/detect.ts
-  styles.css              ├── carriers/evergreen.ts
-                          └── carriers/msc.ts
+  index.html              ├── carriers/registry.ts
+  styles.css              ├── carriers/helpers.ts (cdpTrack, dumpDebug)
+                          ├── carriers/evergreen.ts
+                          ├── carriers/msc.ts
+                          ├── carriers/hmm.ts
+                          ├── carriers/zim.ts
+                          └── carriers/oocl.ts
 ```
+
+All carriers self-register via `registry.register()` when imported in `carriers/index.ts`. The registry runs all carriers in parallel; first successful result wins.
 
 - **Preload script** (`preload.ts`) bridges renderer↔main via `contextBridge`, exposing only `electronAPI.trackShipment()`
 - **Context isolation** is enabled; sandbox is disabled (required for MSC's Chrome DevTools Protocol scraping)
 
 ### Carrier Tracking Strategies
 
-**Evergreen** (`evergreen.ts`): HTTP POST to `ct.shipmentlink.com` + cheerio HTML parsing. Supports B/L, container, and booking searches. 30s timeout.
+There are four proven integration patterns, chosen based on how each carrier's website serves data and what bot protection it uses:
 
-**MSC** (`msc.ts`): Headless BrowserWindow with Chrome DevTools Protocol. Intercepts network responses from the TrackingInfo API endpoint. 45s timeout.
+| Pattern | When to use | Example carriers |
+|---------|------------|-----------------|
+| **HTTP + cheerio** | Carrier has a simple form POST returning HTML | Evergreen |
+| **CDP network intercept** (`cdpTrack` helper) | Carrier loads data via XHR/fetch returning JSON | MSC, HMM |
+| **Session cookies + API** | Carrier has a JSON API behind bot protection (Akamai, etc.) | ZIM |
+| **BrowserWindow + CAPTCHA overlay** | Carrier requires user CAPTCHA solving | OOCL |
 
-**Carrier detection** (`detect.ts`): Identifies carrier and search type by prefix patterns (e.g., EISU/EGHU → Evergreen container, MSCU/MEDU → MSC container, 12-digit numeric → Evergreen B/L).
+**Evergreen** (`evergreen.ts`): HTTP POST to `ct.shipmentlink.com` + cheerio HTML parsing. No browser needed. 30s timeout.
+
+**MSC** (`msc.ts`): Hidden BrowserWindow with CDP. Intercepts JSON from TrackingInfo API. 45s timeout.
+
+**HMM** (`hmm.ts`): Hidden BrowserWindow with CDP via `cdpTrack` helper. Same pattern as MSC. 45s timeout.
+
+**ZIM** (`zim.ts`): Loads ZIM page (without tracking number) in hidden BrowserWindow to obtain Akamai session cookies, then calls `apigw.zim.com` JSON API via `executeJavaScript` fetch. If Akamai challenge triggers, window is shown briefly for auto-resolution. 45s timeout.
+
+**OOCL** (`oocl.ts`): BrowserWindow with `WebContentsView` overlay for CAPTCHA. Embeds CAPTCHA in main app window for user to solve, then scrapes results HTML.
+
+**Adding a new carrier**: Check the carrier's website — use Network tab to find API endpoints. Prefer HTTP+cheerio (simplest) or CDP intercept (for JS-rendered pages). If bot protection blocks Electron, try the session-cookie+API pattern (ZIM). Use CAPTCHA overlay only as last resort.
+
+**Carrier detection** (`detect.ts`): Identifies carrier and search type by prefix patterns (e.g., EISU/EGHU → Evergreen container, MSCU/MEDU → MSC container).
+
+**Debug logging**: `dumpDebug()` writes response data to `userData/debug/`. Enabled automatically during `npm run dev` or when `SHIPMENT_DEBUG=1` env var is set. Off in production.
 
 ### Renderer State Management
 

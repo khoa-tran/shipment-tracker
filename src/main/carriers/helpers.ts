@@ -2,8 +2,10 @@ import { BrowserWindow, app } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
 
-/** Dump debug data (HTML or JSON) to the app's debug directory. */
+/** Dump debug data (HTML or JSON) to the app's debug directory.
+ *  Only writes when SHIPMENT_DEBUG=1 env var is set or app is in dev mode. */
 export function dumpDebug(carrierId: string, label: string, data: string): void {
+  if (!process.env.SHIPMENT_DEBUG && !process.env.npm_lifecycle_event) return;
   try {
     const debugDir = path.join(app.getPath('userData'), 'debug');
     fs.mkdirSync(debugDir, { recursive: true });
@@ -101,27 +103,54 @@ export async function cdpTrack(options: CDPTrackOptions, value: string, signal?:
 
     win.webContents.debugger.sendCommand('Network.enable').catch(() => {});
 
+    // Buffer matched request IDs; fetch body only after loadingFinished
+    const pendingRequests = new Map<string, string>(); // requestId -> url
+
     win.webContents.debugger.on('message', async (_event, method, params) => {
       if (resolved) return;
-      if (method !== 'Network.responseReceived') return;
-      if (responseUrlMatch && !params.response?.url?.includes(responseUrlMatch)) return;
-      try {
-        const { body } = await win!.webContents.debugger.sendCommand(
-          'Network.getResponseBody',
-          { requestId: params.requestId }
-        );
-        const json = JSON.parse(body);
-        if (responseValidator && !responseValidator(json)) return;
-        dumpDebug(carrierId, 'response', JSON.stringify(json, null, 2));
-        finish(json);
-      } catch {
-        // Window destroyed or body not ready — ignore
+
+      if (method === 'Network.responseReceived') {
+        const respUrl = params.response?.url || '';
+        const mimeType = params.response?.mimeType || '';
+        // Log all XHR/fetch responses for debugging
+        if (params.type === 'XHR' || params.type === 'Fetch') {
+          console.log(`[${carrierId}] CDP ${params.type}: ${respUrl.substring(0, 150)}`);
+        }
+        if (responseUrlMatch && !respUrl.includes(responseUrlMatch)) return;
+        // Skip JS/CSS assets that happen to match the URL pattern
+        if (mimeType.includes('javascript') || mimeType.includes('css') || respUrl.match(/\.(js|css|png|jpg|svg|woff)(\?|$)/)) return;
+        console.log(`[${carrierId}] CDP matched response: ${respUrl.substring(0, 120)} (type: ${params.type}, mime: ${mimeType})`);
+        pendingRequests.set(params.requestId, respUrl);
+        return;
+      }
+
+      if (method === 'Network.loadingFinished') {
+        const matchedUrl = pendingRequests.get(params.requestId);
+        if (!matchedUrl) return;
+        pendingRequests.delete(params.requestId);
+        console.log(`[${carrierId}] CDP loading finished for: ${matchedUrl.substring(0, 120)}`);
+        try {
+          const { body } = await win!.webContents.debugger.sendCommand(
+            'Network.getResponseBody',
+            { requestId: params.requestId }
+          );
+          console.log(`[${carrierId}] Response body length: ${body.length}`);
+          const json = JSON.parse(body);
+          if (responseValidator && !responseValidator(json)) return;
+          dumpDebug(carrierId, 'response', JSON.stringify(json, null, 2));
+          finish(json);
+        } catch (e: any) {
+          console.log(`[${carrierId}] CDP getResponseBody error: ${e?.message || e}`);
+        }
+        return;
       }
     });
 
     win.webContents.on('did-finish-load', async () => {
       try {
         if (resolved) return;
+        const pageUrl = win!.webContents.getURL();
+        console.log(`[${carrierId}] Page loaded: ${pageUrl.substring(0, 120)}`);
 
         if (readySelector) {
           // Poll for the target element instead of a fixed delay
@@ -154,13 +183,18 @@ export async function cdpTrack(options: CDPTrackOptions, value: string, signal?:
         }
 
         if (resolved) return;
-        await win!.webContents.executeJavaScript(pageScript(value)).catch(() => {});
-      } catch {
-        // Window destroyed during page interaction — ignore
+        console.log(`[${carrierId}] Executing page script...`);
+        const scriptResult = await win!.webContents.executeJavaScript(pageScript(value)).catch((e: any) => {
+          console.log(`[${carrierId}] Page script error: ${e?.message || e}`);
+        });
+        console.log(`[${carrierId}] Page script result:`, scriptResult);
+      } catch (e: any) {
+        console.log(`[${carrierId}] did-finish-load handler error: ${e?.message || e}`);
       }
     });
 
-    win.webContents.on('did-fail-load', () => {
+    win.webContents.on('did-fail-load', (_event: any, errorCode: any, errorDescription: any, validatedURL: any) => {
+      console.log(`[${carrierId}] Page failed to load: ${errorCode} ${errorDescription} ${validatedURL}`);
       finish(null);
     });
 

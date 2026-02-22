@@ -41,44 +41,60 @@ class CarrierRegistry {
       }
     }
 
-    const carriers = this.getAllCarriers();
+    const allCarriers = this.getAllCarriers();
     const controller = new AbortController();
 
-    return new Promise((resolve) => {
-      let pending = carriers.length;
-      let found = false;
+    // OOCL requires CAPTCHA — run it last, only if no other carrier matched
+    const DEFERRED_CARRIERS = ['oocl'];
+    const primary = allCarriers.filter(c => !DEFERRED_CARRIERS.includes(c.id));
+    const deferred = allCarriers.filter(c => DEFERRED_CARRIERS.includes(c.id));
 
-      for (const carrier of carriers) {
-        onProgress?.(carrier.id, carrier.displayName, 'searching');
+    const runBatch = (carriers: CarrierDefinition[]): Promise<TrackingResult | null> => {
+      return new Promise((resolve) => {
+        let pending = carriers.length;
+        let found = false;
 
-        carrier.track(value, controller.signal)
-          .then((result) => {
-            if (found) return;
-            if (result) {
-              found = true;
-              const now = Date.now();
-              result.fetchedAt = now;
-              this.cache.set(value, { result, timestamp: now });
-              onProgress?.(carrier.id, carrier.displayName, 'found');
-              controller.abort();
-              resolve(result);
-            } else {
-              onProgress?.(carrier.id, carrier.displayName, 'no-result');
-            }
-          })
-          .catch(() => {
-            if (!found) {
-              onProgress?.(carrier.id, carrier.displayName, 'error');
-            }
-          })
-          .finally(() => {
-            pending--;
-            if (pending === 0 && !found) {
-              resolve(null);
-            }
-          });
-      }
-    });
+        for (const carrier of carriers) {
+          onProgress?.(carrier.id, carrier.displayName, 'searching');
+
+          carrier.track(value, controller.signal)
+            .then((result) => {
+              if (found) return;
+              if (result) {
+                found = true;
+                const now = Date.now();
+                result.fetchedAt = now;
+                this.cache.set(value, { result, timestamp: now });
+                onProgress?.(carrier.id, carrier.displayName, 'found');
+                controller.abort();
+                resolve(result);
+              } else {
+                onProgress?.(carrier.id, carrier.displayName, 'no-result');
+              }
+            })
+            .catch(() => {
+              if (!found) {
+                onProgress?.(carrier.id, carrier.displayName, 'error');
+              }
+            })
+            .finally(() => {
+              pending--;
+              if (pending === 0 && !found) {
+                resolve(null);
+              }
+            });
+        }
+      });
+    };
+
+    // Run primary carriers in parallel first
+    const primaryResult = await runBatch(primary);
+    if (primaryResult || controller.signal.aborted || deferred.length === 0) {
+      return primaryResult;
+    }
+
+    // If no result, run deferred carriers (OOCL) sequentially
+    return runBatch(deferred);
   }
 }
 

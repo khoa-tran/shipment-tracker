@@ -197,6 +197,13 @@ async function trackCMACGM(searchValue: string, signal?: AbortSignal): Promise<T
 
             var containerRef = document.querySelector('.tracking-detail-container-reference');
             result.containerNo = containerRef ? containerRef.textContent.trim() : '';
+            if (!result.containerNo) {
+              var resumeFilter = document.querySelector('.resume-filter');
+              if (resumeFilter) {
+                var strong = resumeFilter.querySelector('strong');
+                if (strong) result.containerNo = strong.textContent.trim();
+              }
+            }
 
             var sizeType = document.querySelector('.tracking-detail-container-sizetype');
             result.sizeType = sizeType ? sizeType.textContent.trim() : '';

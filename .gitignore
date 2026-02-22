@@ -4,3 +4,4 @@ release/
 *.dmg
 *.exe
 .claude/
+docs/plans/

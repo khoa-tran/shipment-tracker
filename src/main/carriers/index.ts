@@ -11,5 +11,6 @@ import './oocl'; // Last: may require CAPTCHA
 import './cosco';
 import './one';
 import './yangming';
+import './kmtc';
 
 export { registry } from './registry';

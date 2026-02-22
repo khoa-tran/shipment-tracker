@@ -542,7 +542,7 @@ function renderShipmentList(): void {
   // Column header row
   html += '<div class="row-header">';
   html += '<div class="col-carrier">Carrier</div>';
-  html += '<div class="col-number">Container / MBL #</div>';
+  html += '<div class="col-number">B/L #</div>';
   html += '<div class="col-origin">Origin</div>';
   html += '<div class="col-dest">Destination</div>';
   html += '<div class="col-vessel">Vessel / Voyage</div>';

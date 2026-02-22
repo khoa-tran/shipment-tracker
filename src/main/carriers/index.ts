@@ -10,6 +10,6 @@ import './oocl'; // Last: may require CAPTCHA
 // import './hapag';
 import './cosco';
 import './one';
-// import './yangming';
+import './yangming';
 
 export { registry } from './registry';

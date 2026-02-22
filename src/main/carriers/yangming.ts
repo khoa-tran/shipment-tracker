@@ -1,77 +1,130 @@
 import { TrackingResult, ContainerInfo, TrackingEvent } from './types';
 import { registry } from './registry';
-import { cdpTrack } from './helpers';
+import { dumpDebug } from './helpers';
+
+const API_BASE = 'https://www.yangming.com/api/CargoTracking/GetTracking';
+const HEADERS: Record<string, string> = {
+  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+  'Accept': 'application/json',
+};
+
+/** Strip HTML tags like <BR /> from API text fields */
+function cleanHtml(text: string): string {
+  return text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/** Extract vessel/voyage from tsMode field like "HMM RUBY<BR />(011E)" */
+function parseVesselVoyage(tsMode: string | null): string {
+  if (!tsMode) return '';
+  const clean = cleanHtml(tsMode);
+  // e.g. "HMM RUBY (011E)" → "HMM RUBY 011E"
+  return clean.replace(/[()]/g, '').replace(/\s+/g, ' ').trim();
+}
 
 async function trackYangMing(searchValue: string, signal?: AbortSignal): Promise<TrackingResult | null> {
   const val = searchValue.trim().toUpperCase();
 
-  // Yang Ming is ASP.NET — use CDP to handle VIEWSTATE complexity
-  const json = await cdpTrack({
-    carrierId: 'yangming',
-    url: 'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx',
-    responseUrlMatch: 'track_trace',
-    timeout: 45000,
-    initialDelay: 4000,
-    pageScript: (v) => `
-      (function() {
-        var input = document.querySelector('#ContentPlaceHolder1_txtBLNo, #ContentPlaceHolder1_txtCNTRNo, input[id*="txtBL"], input[id*="txtCNTR"]');
-        if (input) {
-          var nativeSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype, 'value'
-          ).set;
-          nativeSetter.call(input, '${v}');
-          input.dispatchEvent(new Event('input', { bubbles: true }));
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        setTimeout(function() {
-          var btn = document.querySelector('#ContentPlaceHolder1_btnTrack, input[id*="btnTrack"], button[id*="btnTrack"]');
-          if (btn) btn.click();
-        }, 500);
-      })();
-    `,
-  }, val, signal);
+  // Step 1: Search by B/L or booking number
+  const searchUrl = `${API_BASE}?paramTrackNo=${encodeURIComponent(val)}&paramTrackPosition=SEARCH&paramRefNo=`;
+  const fetchSignal = signal
+    ? AbortSignal.any([signal, AbortSignal.timeout(30000)])
+    : AbortSignal.timeout(30000);
 
-  if (!json) return null;
+  const searchResp = await fetch(searchUrl, { headers: HEADERS, signal: fetchSignal });
+  if (!searchResp.ok) return null;
+
+  const searchData = await searchResp.json();
+  dumpDebug('yangming', 'search-response', JSON.stringify(searchData, null, 2));
+
+  if (!searchData.successCnt || searchData.successCnt === 0) return null;
+
+  const bl = searchData.blList?.[0] || searchData.bookingList?.[0];
+  if (!bl) return null;
+
+  const basic = bl.basicInfo || {};
+  const routing = bl.routingInfo?.routingSchedule || [];
+
+  // Find ETA from routing — last entry with dateQlfr
+  let eta = '';
+  for (const r of routing) {
+    if (r.placeName && r.dateTime) {
+      eta = r.dateTime.split(' ')[0]; // "2026/02/12 02:49" → "2026/02/12"
+    }
+  }
 
   const result: TrackingResult = {
     carrier: 'Yang Ming',
     trackingNo: val,
+    blNo: bl.returnTrackNo || val,
+    vesselVoyage: basic.vesselName ? `${basic.vesselName} ${basic.vesselComn || ''}`.trim() : undefined,
+    eta: eta || undefined,
+    portOfLoading: basic.loading ? cleanHtml(basic.loading) : undefined,
+    portOfDischarge: basic.discharge ? cleanHtml(basic.discharge) : undefined,
+    placeOfReceipt: basic.receipt ? cleanHtml(basic.receipt) : undefined,
+    placeOfDelivery: basic.delivery ? cleanHtml(basic.delivery) : undefined,
+    onBoardDate: basic.obDate || undefined,
+    grossWeight: basic.grossWgt ? `${basic.grossWgt} ${basic.grossWgtUnit || ''}`.trim() : undefined,
+    measurement: basic.cbm ? `${basic.cbm} ${basic.cbmUnit || ''}`.trim() : undefined,
+    containerCount: basic.ctnrUnit || undefined,
+    serviceMode: basic.serviceTerm || undefined,
     containers: [],
     events: [],
     planMoves: [],
   };
 
-  // Parse the JSON response based on Yang Ming's API structure
-  if (typeof json === 'object') {
-    const data = json.d || json.Data || json;
+  // Step 2: For each container, fetch detailed event history
+  const containerInfoList = bl.containerInfo || [];
+  for (const c of containerInfoList) {
+    const ctnrNo = c.ctnrNo || '';
+    if (!ctnrNo) continue;
 
-    if (data.BLNo || data.blNo) result.blNo = data.BLNo || data.blNo;
-    if (data.POL || data.portOfLoading) result.portOfLoading = data.POL || data.portOfLoading;
-    if (data.POD || data.portOfDischarge) result.portOfDischarge = data.POD || data.portOfDischarge;
-    if (data.ETA || data.eta) result.eta = data.ETA || data.eta;
-    if (data.VesselVoyage) result.vesselVoyage = data.VesselVoyage;
+    const container: ContainerInfo = {
+      containerNo: ctnrNo,
+      sizeType: `${c.cnSize || ''} ${c.cnType || ''}`.trim(),
+      sealNo: c.sealNo || undefined,
+      currentStatus: c.lastEvent || undefined,
+      date: c.moveDate || undefined,
+      location: c.place ? cleanHtml(c.place) : undefined,
+      vgm: c.vgm ? `${c.vgm} ${c.vgmUnit || ''}`.trim() : undefined,
+    };
+    result.containers.push(container);
 
-    const containers = data.ContainerList || data.containers || [];
-    for (const c of containers) {
-      result.containers.push({
-        containerNo: c.ContainerNo || c.cntrNo || '',
-        sizeType: c.ContainerType || c.cntrType || '',
-        currentStatus: c.Status || c.status || '',
-      });
-    }
+    // Fetch container event details
+    try {
+      const detailUrl = `${API_BASE}?paramTrackNo=${encodeURIComponent(ctnrNo)}&paramTrackPosition=BL_CT&paramRefNo=${encodeURIComponent(val)}`;
+      const detailSignal = signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(15000)])
+        : AbortSignal.timeout(15000);
+      const detailResp = await fetch(detailUrl, { headers: HEADERS, signal: detailSignal });
+      if (!detailResp.ok) continue;
 
-    const events = data.EventList || data.events || [];
-    for (const ev of events) {
-      result.events.push({
-        date: ev.Date || ev.date || '',
-        location: ev.Location || ev.location || '',
-        event: ev.Description || ev.description || ev.Status || '',
-        vesselVoyage: ev.VesselVoyage || ev.vessel || '',
-      });
+      const detailData = await detailResp.json();
+      dumpDebug('yangming', `container-${ctnrNo}`, JSON.stringify(detailData, null, 2));
+
+      const ctList = detailData.containerList?.[0]?.ctStatusInfo || [];
+      for (const ev of ctList) {
+        result.events.push({
+          date: ev.moveDate || '',
+          location: ev.atFacility ? cleanHtml(ev.atFacility) : '',
+          event: ev.eventDesc || '',
+          vesselVoyage: parseVesselVoyage(ev.tsMode) || undefined,
+        });
+      }
+    } catch {
+      // Container detail fetch failed — continue with basic info
     }
   }
 
-  if (result.containers.length === 0 && result.events.length === 0 && !result.eta) return null;
+  // Build planMoves from routing schedule
+  for (const r of routing) {
+    if (r.placeName && r.dateTime) {
+      result.planMoves.push({
+        eta: r.dateTime,
+        location: r.placeName,
+        vesselVoyage: result.vesselVoyage || '',
+      });
+    }
+  }
 
   return result;
 }

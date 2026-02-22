@@ -622,6 +622,22 @@ function renderShipmentList(): void {
       }
     });
   }
+
+  // Container expand/collapse handlers
+  for (const header of document.querySelectorAll('.container-header[data-container]')) {
+    header.addEventListener('click', (e) => {
+      e.stopPropagation(); // Don't bubble to shipment row
+      const cntrNo = (header as HTMLElement).dataset.container!;
+      const key = 'ctr:' + cntrNo;
+      if (expandedIds.has(key)) {
+        expandedIds.delete(key);
+      } else {
+        expandedIds.add(key);
+      }
+      renderShipmentList();
+      showResults();
+    });
+  }
 }
 
 function renderShipmentRow(s: TrackedShipment): string {
@@ -703,48 +719,79 @@ function renderDetailSection(r: TrackingResult): string {
     html += '</div></div>';
   }
 
-  // Containers
-  if (r.containers.length > 0) {
-    const hasSealNo = r.containers.some(c => c.sealNo);
-    const hasStatus = r.containers.some(c => c.currentStatus);
-    const hasDate = r.containers.some(c => c.date);
-    const hasLatestMove = r.containers.some(c => c.latestMove);
-    const hasLocation = r.containers.some(c => c.location);
-    const hasVessel = r.containers.some(c => c.vesselVoyage);
-
-    html += '<div class="detail-section"><div class="detail-section-title">Containers</div>';
-    html += '<table class="data-table"><thead><tr>';
-    html += '<th>Container</th><th>Size/Type</th>';
-    if (hasSealNo) html += '<th>Seal No.</th>';
-    if (hasStatus) html += '<th>Status</th>';
-    if (hasDate) html += '<th>Date</th>';
-    if (hasLatestMove) html += '<th>Latest Move</th>';
-    if (hasLocation) html += '<th>Location</th>';
-    if (hasVessel) html += '<th>Vessel/Voyage</th>';
-    html += '</tr></thead><tbody>';
-
-    for (const c of r.containers) {
-      html += '<tr>';
-      html += `<td class="mono">${escapeHtml(c.containerNo)}</td>`;
-      html += `<td>${escapeHtml(c.sizeType)}</td>`;
-      if (hasSealNo) html += `<td class="seal-cell">${escapeHtml(c.sealNo || '-')}</td>`;
-      if (hasStatus) html += `<td>${escapeHtml(c.currentStatus || '')}</td>`;
-      if (hasDate) html += `<td>${escapeHtml(formatDate(c.date) || c.date || '')}</td>`;
-      if (hasLatestMove) html += `<td>${escapeHtml(c.latestMove || '')}</td>`;
-      if (hasLocation) html += `<td>${escapeHtml(c.location || '')}</td>`;
-      if (hasVessel) html += `<td>${escapeHtml(c.vesselVoyage || '')}</td>`;
-      html += '</tr>';
+  // Group events by containerNo
+  const eventsByContainer = new Map<string, TrackingEvent[]>();
+  const shipmentEvents: TrackingEvent[] = [];
+  for (const ev of r.events) {
+    if (ev.containerNo) {
+      const list = eventsByContainer.get(ev.containerNo) || [];
+      list.push(ev);
+      eventsByContainer.set(ev.containerNo, list);
+    } else {
+      shipmentEvents.push(ev);
     }
-    html += '</tbody></table></div>';
   }
 
-  // Events
-  if (r.events.length > 0) {
-    html += '<div class="detail-section"><div class="detail-section-title">Event History</div>';
+  // Containers as expandable cards
+  if (r.containers.length > 0) {
+    html += '<div class="detail-section"><div class="detail-section-title">Containers</div>';
+
+    for (const c of r.containers) {
+      const hasEvents = eventsByContainer.has(c.containerNo);
+      const ctrKey = 'ctr:' + c.containerNo;
+      const isExpanded = hasEvents && expandedIds.has(ctrKey);
+
+      html += `<div class="container-card${isExpanded ? ' expanded' : ''}">`;
+      html += `<div class="container-header"${hasEvents ? ` data-container="${escapeHtml(c.containerNo)}"` : ''}>`;
+
+      // Toggle arrow (only if events exist)
+      if (hasEvents) {
+        html += `<span class="container-toggle">\u25B6</span>`;
+      }
+
+      html += `<span class="mono">${escapeHtml(c.containerNo)}</span>`;
+      if (c.sizeType) html += `<span class="container-detail">${escapeHtml(c.sizeType)}</span>`;
+      if (c.sealNo) html += `<span class="container-detail seal-cell">${escapeHtml(c.sealNo)}</span>`;
+      if (c.currentStatus) html += `<span class="container-status">${escapeHtml(c.currentStatus)}</span>`;
+      if (c.date) html += `<span class="container-detail">${escapeHtml(formatDate(c.date) || c.date)}</span>`;
+      if (c.location) html += `<span class="container-detail">${escapeHtml(c.location)}</span>`;
+
+      html += '</div>'; // .container-header
+
+      // Expanded event table
+      if (isExpanded) {
+        const events = eventsByContainer.get(c.containerNo)!;
+        html += '<div class="container-events">';
+        html += '<table class="data-table"><thead><tr>';
+        html += '<th>Date</th><th>Event</th><th>Location</th>';
+        html += '</tr></thead><tbody>';
+        for (const ev of events) {
+          let loc = ev.location;
+          if (ev.vesselVoyage) loc += ` [${ev.vesselVoyage}]`;
+          if (ev.terminal) loc += ` @ ${ev.terminal}`;
+
+          html += '<tr>';
+          html += `<td class="nowrap">${escapeHtml(formatDate(ev.date) || ev.date)}</td>`;
+          html += `<td>${escapeHtml(ev.event)}</td>`;
+          html += `<td>${escapeHtml(loc)}</td>`;
+          html += '</tr>';
+        }
+        html += '</tbody></table></div>'; // .container-events
+      }
+
+      html += '</div>'; // .container-card
+    }
+
+    html += '</div>'; // .detail-section
+  }
+
+  // Shipment Events fallback (events without containerNo)
+  if (shipmentEvents.length > 0) {
+    html += '<div class="detail-section"><div class="detail-section-title">Shipment Events</div>';
     html += '<table class="data-table"><thead><tr>';
     html += '<th>Date</th><th>Event</th><th>Location</th>';
     html += '</tr></thead><tbody>';
-    for (const ev of r.events) {
+    for (const ev of shipmentEvents) {
       let loc = ev.location;
       if (ev.vesselVoyage) loc += ` [${ev.vesselVoyage}]`;
       if (ev.terminal) loc += ` @ ${ev.terminal}`;

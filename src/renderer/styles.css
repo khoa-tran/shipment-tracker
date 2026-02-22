@@ -564,6 +564,68 @@ body {
   display: none !important;
 }
 
+/* ---- Expandable Container Cards ---- */
+.container-card {
+  border: 1px solid #eee;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.container-card:last-child {
+  margin-bottom: 0;
+}
+
+.container-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: #444;
+  transition: background 0.15s;
+}
+
+.container-header[data-container] {
+  cursor: pointer;
+}
+
+.container-header[data-container]:hover {
+  background: #f8f9fa;
+}
+
+.container-toggle {
+  font-size: 9px;
+  color: #999;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+  width: 12px;
+  display: inline-block;
+}
+
+.container-card.expanded .container-toggle {
+  transform: rotate(90deg);
+}
+
+.container-events {
+  border-top: 1px solid #f0f0f0;
+  padding: 8px 12px 12px;
+  background: #fafbfc;
+}
+
+.container-events .data-table {
+  font-size: 11px;
+}
+
+.container-detail {
+  color: #888;
+  font-size: 11px;
+}
+
+.container-status {
+  font-weight: 500;
+}
+
 /* ---- Responsive ---- */
 
 /* Hide seal column */

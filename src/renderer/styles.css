@@ -298,16 +298,16 @@ body {
 }
 
 /* Column widths */
-.col-carrier { width: 90px; flex-shrink: 0; }
-.col-number  { width: 180px; flex-shrink: 0; }
-.col-origin  { flex: 1; min-width: 100px; }
-.col-dest    { flex: 1; min-width: 100px; }
-.col-vessel  { flex: 1; min-width: 100px; }
+.col-carrier { width: 80px; flex-shrink: 0; }
+.col-number  { width: 150px; flex-shrink: 0; }
+.col-origin  { flex: 1; min-width: 80px; }
+.col-dest    { flex: 1; min-width: 80px; }
+.col-vessel  { flex: 1; min-width: 80px; }
 .col-eta     { width: 120px; flex-shrink: 0; }
-.col-cntrs   { width: 60px; flex-shrink: 0; text-align: center; padding-right: 16px; }
-.col-seal    { width: 220px; flex-shrink: 0; }
-.col-freshness { width: 80px; flex-shrink: 0; }
-.col-actions { width: 88px; flex-shrink: 0; text-align: right; }
+.col-cntrs   { width: 50px; flex-shrink: 0; text-align: center; padding-right: 16px; }
+.col-seal    { width: 200px; flex-shrink: 0; }
+.col-freshness { width: 70px; flex-shrink: 0; }
+.col-actions { width: 80px; flex-shrink: 0; text-align: right; }
 
 /* ---- Shipment Row ---- */
 .shipment-rows {

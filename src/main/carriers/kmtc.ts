@@ -68,6 +68,11 @@ function formatDateTime(datePart: string, timePart: string): string {
   return `${dateFormatted} ${hh}:${mm}`;
 }
 
+/** Ensure commas are followed by a space (e.g. "QINGDAO,CHINA" → "QINGDAO, CHINA") */
+function normalizeCommas(text: string): string {
+  return text.replace(/,(?!\s)/g, ', ').trim();
+}
+
 /** Map KMTC status codes to human-readable event descriptions */
 function describeEvent(stsCd: string, mvntCd: string): string {
   const sts: Record<string, string> = {
@@ -239,8 +244,8 @@ async function trackKMTC(searchValue: string, signal?: AbortSignal): Promise<Tra
       blNo: blNo,
       vesselVoyage: first.vslNm || undefined,
       eta: first.eta ? formatDate(first.eta) : undefined,
-      portOfLoading: first.orgPolPortNm || first.polPortNm || undefined,
-      portOfDischarge: first.orgPodPortNm || first.podPortNm || undefined,
+      portOfLoading: normalizeCommas(first.orgPolPortNm || first.polPortNm || '') || undefined,
+      portOfDischarge: normalizeCommas(first.orgPodPortNm || first.podPortNm || '') || undefined,
       containers: [],
       events: [],
       planMoves: [],

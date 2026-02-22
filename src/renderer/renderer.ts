@@ -18,6 +18,7 @@ interface TrackingEvent {
   event: string;
   vesselVoyage?: string;
   terminal?: string;
+  containerNo?: string;
 }
 
 interface PlanMove {

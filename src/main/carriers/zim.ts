@@ -237,6 +237,7 @@ async function trackZIM(searchValue: string, signal?: AbortSignal): Promise<Trac
           location: [act.placeFromDesc, act.countryFromName].filter(Boolean).join(', '),
           event: (act.activityDesc || '').trim(),
           vesselVoyage: [act.vesselName, act.voyage ? `${act.voyage}/${act.leg || ''}`.replace(/\/$/, '') : ''].filter(Boolean).join(' / '),
+          containerNo,
         });
       }
     }

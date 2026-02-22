@@ -108,6 +108,7 @@ async function trackYangMing(searchValue: string, signal?: AbortSignal): Promise
           location: ev.atFacility ? cleanHtml(ev.atFacility) : '',
           event: ev.eventDesc || '',
           vesselVoyage: parseVesselVoyage(ev.tsMode) || undefined,
+          containerNo: ctnrNo,
         });
       }
     } catch {

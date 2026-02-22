@@ -116,6 +116,7 @@ function parseMSCJson(data: MSCResponseData): TrackingResult | null {
         event: ev.Description || '',
         vesselVoyage: ev.Detail?.join(' / ') || '',
         terminal: ev.EquipmentHandling?.Name || '',
+        containerNo: cntr.ContainerNumber || '',
       });
     }
   }

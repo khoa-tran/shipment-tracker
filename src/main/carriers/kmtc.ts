@@ -295,6 +295,7 @@ async function trackKMTC(searchValue: string, signal?: AbortSignal): Promise<Tra
                 location: ev.plcNm || '',
                 event: describeEvent(ev.cntrStsCd || '', ev.cntrMvntCd || ''),
                 terminal: ev.trmlNm || undefined,
+                containerNo: firstCntrNo,
               });
             }
           }

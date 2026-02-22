@@ -18,6 +18,7 @@ export interface TrackingEvent {
   event: string;
   vesselVoyage?: string;
   terminal?: string;
+  containerNo?: string;
 }
 
 export interface PlanMove {

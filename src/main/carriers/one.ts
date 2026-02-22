@@ -222,6 +222,7 @@ async function trackONE(searchValue: string, signal?: AbortSignal): Promise<Trac
           event: ev.eventName || '',
           terminal: ev.yard?.yardName,
           vesselVoyage: vesselParts.length > 0 ? vesselParts.join(' / ') : undefined,
+          containerNo: cno,
         });
       }
     }

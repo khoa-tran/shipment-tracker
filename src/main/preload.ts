@@ -15,4 +15,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('captcha-overlay', listener);
     return () => ipcRenderer.removeListener('captcha-overlay', listener);
   },
+  openExternal: (url: string) =>
+    ipcRenderer.invoke('open-external', url),
 });

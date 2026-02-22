@@ -154,6 +154,7 @@ async function trackONE(searchValue: string, signal?: AbortSignal): Promise<Trac
   const result: TrackingResult = {
     carrier: 'ONE',
     trackingNo: bookingNo,
+    trackingUrl: 'https://ecomm.one-line.com/ecom/CUP_HOM_3301.do',
     containers: [],
     events: [],
     planMoves: [],

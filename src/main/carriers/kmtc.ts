@@ -246,6 +246,7 @@ async function trackKMTC(searchValue: string, signal?: AbortSignal): Promise<Tra
       eta: first.eta ? formatDate(first.eta) : undefined,
       portOfLoading: normalizeCommas(first.orgPolPortNm || first.polPortNm || '') || undefined,
       portOfDischarge: normalizeCommas(first.orgPodPortNm || first.podPortNm || '') || undefined,
+      trackingUrl: 'https://www.ekmtc.com/index.html#/cargo-tracking',
       containers: [],
       events: [],
       planMoves: [],

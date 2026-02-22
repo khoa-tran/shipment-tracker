@@ -307,7 +307,7 @@ body {
 .col-cntrs   { width: 50px; flex-shrink: 0; text-align: center; padding-right: 16px; }
 .col-seal    { width: 200px; flex-shrink: 0; }
 .col-freshness { width: 70px; flex-shrink: 0; }
-.col-actions { width: 80px; flex-shrink: 0; text-align: right; }
+.col-actions { width: 110px; flex-shrink: 0; text-align: right; }
 
 /* ---- Shipment Row ---- */
 .shipment-rows {
@@ -419,6 +419,11 @@ body {
 .remove-btn:hover {
   background: #fef2f2;
   color: #b91c1c;
+}
+
+.link-btn:hover {
+  background: #f0fdf4;
+  color: #15803d;
 }
 
 .refresh-btn:hover {

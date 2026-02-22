@@ -263,6 +263,7 @@ async function trackCOSCO(searchValue: string, signal?: AbortSignal): Promise<Tr
           carrier: 'COSCO',
           trackingNo: val,
           blNo: val,
+          trackingUrl: 'https://elines.coscoshipping.com/ebusiness/cargoTracking',
           containers: [],
           events: [],
           planMoves: [],

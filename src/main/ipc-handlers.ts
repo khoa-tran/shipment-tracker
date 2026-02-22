@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import { registry } from './carriers';
 import { TrackingResult } from './carriers/types';
 
@@ -25,5 +25,9 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle('get-carriers', () => {
     return registry.getAllCarriers().map(c => ({ id: c.id, displayName: c.displayName }));
+  });
+
+  ipcMain.handle('open-external', (_event, url: string) => {
+    return shell.openExternal(url);
   });
 }

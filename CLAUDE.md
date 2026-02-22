@@ -36,9 +36,8 @@ Renderer (src/renderer/)          Main (src/main/)
                           ├── carriers/yangming.ts
                           ├── carriers/kmtc.ts
                           ├── carriers/sealead.ts
-                          ├── carriers/cmacgm.ts    (disabled)
-                          ├── carriers/hapag.ts      (disabled)
-                          └── carriers/maersk.ts     (disabled)
+                          ├── carriers/cmacgm.ts
+                          └── carriers/maersk.ts
 ```
 
 All carriers self-register via `registry.register()` when imported in `carriers/index.ts`. The registry runs all carriers in parallel; first successful result wins.
@@ -54,9 +53,9 @@ There are six proven integration patterns, chosen based on how each carrier's we
 |---------|------------|-----------------|
 | **HTTP + cheerio** | Carrier has a simple form POST returning HTML | Evergreen |
 | **Direct REST API** | Carrier has an open JSON API, no browser needed | ONE, Yang Ming |
-| **CDP network intercept** (`cdpTrack` helper) | Carrier loads data via XHR/fetch returning JSON | MSC, HMM, CMA CGM, Hapag-Lloyd, Maersk |
+| **CDP network intercept** (`cdpTrack` helper) | Carrier loads data via XHR/fetch returning JSON | MSC, HMM, Hapag-Lloyd, Maersk |
 | **Session cookies + API** | Carrier has a JSON API behind bot protection (Akamai, etc.) | ZIM, KMTC |
-| **BrowserWindow + DOM scraping** | JS-rendered SPA requiring browser interaction + DOM reads | COSCO |
+| **BrowserWindow + DOM scraping** | JS-rendered SPA requiring browser interaction + DOM reads | COSCO, CMA CGM |
 | **BrowserWindow + CAPTCHA overlay** | Carrier requires user CAPTCHA solving | OOCL |
 
 **Adding a new carrier**: Check the carrier's website — use Network tab to find API endpoints. Prefer direct REST API (simplest, no browser) or HTTP+cheerio. Use CDP intercept for JS-rendered pages with XHR data. If bot protection blocks Electron, try the session-cookie+API pattern (ZIM/KMTC). Use BrowserWindow+DOM scraping for SPAs without interceptable APIs. Use CAPTCHA overlay only as last resort. Read an existing carrier using the same pattern as a reference.

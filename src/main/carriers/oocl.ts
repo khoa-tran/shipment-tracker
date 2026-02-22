@@ -83,6 +83,7 @@ function parseResults(html: string, searchValue: string): TrackingResult | null 
   const result: TrackingResult = {
     carrier: 'OOCL',
     trackingNo: searchValue,
+    trackingUrl: `https://www.oocl.com/Pages/ExpressLink.aspx?eltype=ct&bl_no=${searchValue}&cont_no=&booking_no=`,
     containers: [],
     events: [],
     planMoves: [],

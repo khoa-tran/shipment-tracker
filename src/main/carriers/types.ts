@@ -49,5 +49,6 @@ export interface TrackingResult {
   containers: ContainerInfo[];
   events: TrackingEvent[];
   planMoves: PlanMove[];
+  trackingUrl?: string;
   fetchedAt?: number;
 }

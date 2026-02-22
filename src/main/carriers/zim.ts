@@ -193,6 +193,7 @@ async function trackZIM(searchValue: string, signal?: AbortSignal): Promise<Trac
     const result: TrackingResult = {
       carrier: 'ZIM',
       trackingNo: val,
+      trackingUrl: 'https://www.zim.com/tools/track-a-shipment',
       containers: [],
       events: [],
       planMoves: [],

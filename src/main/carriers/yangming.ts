@@ -67,6 +67,7 @@ async function trackYangMing(searchValue: string, signal?: AbortSignal): Promise
     measurement: basic.cbm ? `${basic.cbm} ${basic.cbmUnit || ''}`.trim() : undefined,
     containerCount: basic.ctnrUnit || undefined,
     serviceMode: basic.serviceTerm || undefined,
+    trackingUrl: 'https://www.yangming.com/en/esolution/cargo_tracking',
     containers: [],
     events: [],
     planMoves: [],

@@ -7,8 +7,7 @@ import './zim';
 import './sealead';
 import './oocl'; // Last: may require CAPTCHA
 import './maersk';
-// import './cmacgm';
-// import './hapag';
+import './cmacgm';
 import './cosco';
 import './one';
 import './yangming';

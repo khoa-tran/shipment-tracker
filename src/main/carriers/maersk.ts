@@ -201,6 +201,7 @@ function parseMaerskJson(data: MaerskData, trackingNo: string): TrackingResult |
     carrier: 'Maersk',
     trackingNo,
     blNo: cntrList[0]?.shipment_num,
+    trackingUrl: `https://www.maersk.com/tracking/${trackingNo}`,
     containers: [],
     events: [],
     planMoves: [],

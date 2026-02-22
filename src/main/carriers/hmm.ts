@@ -104,6 +104,7 @@ async function trackHMM(searchValue: string, signal?: AbortSignal): Promise<Trac
   const result: TrackingResult = {
     carrier: 'HMM',
     trackingNo: val,
+    trackingUrl: 'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do',
     containers: [],
     events: [],
     planMoves: [],

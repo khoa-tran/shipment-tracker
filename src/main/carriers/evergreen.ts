@@ -80,6 +80,7 @@ async function trackEvergreen(searchValue: string, signal?: AbortSignal): Promis
   const $ = cheerio.load(html);
   const result: TrackingResult = {
     carrier: 'Evergreen',
+    trackingUrl: 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do',
     containers: [],
     events: [],
     planMoves: [],

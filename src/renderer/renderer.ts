@@ -49,6 +49,7 @@ interface TrackingResult {
   containers: ContainerInfo[];
   events: TrackingEvent[];
   planMoves: PlanMove[];
+  trackingUrl?: string;
 }
 
 interface TrackingStatusEvent {
@@ -64,6 +65,7 @@ declare global {
       onTrackingStatus: (callback: (data: TrackingStatusEvent) => void) => () => void;
       getCarriers: () => Promise<Array<{ id: string; displayName: string }>>;
       onCaptchaOverlay: (callback: (show: boolean) => void) => () => void;
+      openExternal: (url: string) => Promise<void>;
     };
   }
 }
@@ -291,6 +293,7 @@ function mergeResults(existing: TrackingResult, incoming: TrackingResult): Track
     'placeOfReceipt', 'portOfLoading', 'portOfDischarge', 'placeOfDelivery',
     'shippedFrom', 'shippedTo', 'transshipments', 'containerCount',
     'grossWeight', 'measurement', 'manifestQuantity', 'onBoardDate', 'serviceMode',
+    'trackingUrl',
   ];
   for (const f of fields) {
     if (!merged[f] && other[f]) {
@@ -653,6 +656,12 @@ function renderShipmentList(): void {
       }
     });
 
+    document.querySelector(`[data-link="${safeId}"]`)?.addEventListener('click', () => {
+      if (s.result.trackingUrl) {
+        window.electronAPI.openExternal(s.result.trackingUrl);
+      }
+    });
+
     document.querySelector(`[data-remove="${safeId}"]`)?.addEventListener('click', () => {
       const idx = shipments.findIndex(sh => sh.id === s.id);
       if (idx >= 0) shipments.splice(idx, 1);
@@ -710,6 +719,9 @@ function renderShipmentRow(s: TrackedShipment): string {
 
   html += `<div class="col-freshness"><span class="freshness-text">${timeAgo(s.fetchedAt)}</span></div>`;
   html += `<div class="col-actions">`;
+  if (r.trackingUrl) {
+    html += `<button class="icon-btn link-btn" data-link="${safeId}" title="View on carrier website">\u{1F517}</button>`;
+  }
   html += `<button class="icon-btn refresh-btn" data-refresh="${safeId}" title="Refresh">\u21BB</button>`;
   html += `<button class="icon-btn remove-btn" data-remove="${safeId}" title="Remove">\u2715</button>`;
   html += `</div>`;

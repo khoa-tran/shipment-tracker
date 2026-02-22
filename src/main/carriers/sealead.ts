@@ -181,6 +181,7 @@ async function trackSeaLead(searchValue: string, signal?: AbortSignal): Promise<
 
   const result: TrackingResult = {
     carrier: 'Sea Lead',
+    trackingUrl: 'https://www.sea-lead.com/track-shipment/',
     containers: [],
     events: [],
     planMoves: [],

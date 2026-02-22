@@ -86,6 +86,7 @@ function parseMSCJson(data: MSCResponseData): TrackingResult | null {
     portOfDischarge: gen.PortOfDischarge,
     shippedTo: gen.ShippedTo,
     transshipments: gen.Transshipments?.join(', '),
+    trackingUrl: 'https://www.msc.com/en/track-a-shipment',
     containers: [],
     events: [],
     planMoves: [],
